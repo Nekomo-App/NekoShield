@@ -98,7 +98,7 @@ class FiltersActivity : BaseActivity() {
             .setPositiveButton("Save") { _, _ ->
                 val set = input.text.toString()
                     .lines()
-                    .map { it.trim().lowercase().trimEnd('.') }
+                    .map { it.trim().lowercase().trimEnd('.').replace(Regex("\\s+"), "") }
                     .filter { it.isNotEmpty() }
                     .toSet()
                 if (block) p.userBlock = set else p.userAllow = set

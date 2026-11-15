@@ -62,9 +62,11 @@ object UpdateUi {
         if (!p.autoUpdate) return
         if (System.currentTimeMillis() - p.lastUpdateCheck < 24L * 3600 * 1000) return
         ctx.lifecycleScope.launch {
-            val rel = try { withContext(Dispatchers.IO) { Updater.fetchUpdate() } }
-                catch (_: Exception) { null }
-            p.lastUpdateCheck = System.currentTimeMillis()
+            var ok = false
+            val rel = try {
+                withContext(Dispatchers.IO) { Updater.fetchUpdate() }.also { ok = true }
+            } catch (_: Exception) { null }
+            if (ok) p.lastUpdateCheck = System.currentTimeMillis() // don't burn the daily slot on a network failure
             if (rel != null) offer(ctx, rel)
         }
     }

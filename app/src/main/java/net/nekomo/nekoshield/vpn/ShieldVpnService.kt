@@ -56,7 +56,10 @@ class ShieldVpnService : VpnService() {
     private var tun: ParcelFileDescriptor? = null
     private var thread: Thread? = null
     private val quit = AtomicBoolean(false)
-    private val pool = Executors.newFixedThreadPool(8)
+    // Fresh pool per tunnel — a shut-down executor stays dead, so a restart
+    // would otherwise leave the read thread throwing RejectedExecutionException.
+    private var pool = Executors.newFixedThreadPool(8)
+    private val counterLock = Any()
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         android.util.Log.i("NekoShield", "onStartCommand action=${intent?.action}")
@@ -97,6 +100,7 @@ class ShieldVpnService : VpnService() {
 
         foregroundNotify()
         quit.set(false)
+        pool = Executors.newFixedThreadPool(8)
         thread = Thread { loop(upstream, filter) }.apply {
             name = "ns-tun"
             isDaemon = true
@@ -127,6 +131,7 @@ class ShieldVpnService : VpnService() {
         val input = FileInputStream(fd)
         val output = FileOutputStream(fd)
         val packet = ByteArray(32767)
+        val workers = pool // this tunnel's executor — dies with it, never reused
 
         while (!quit.get()) {
             val len = try { input.read(packet) } catch (_: Exception) { break }
@@ -136,32 +141,38 @@ class ShieldVpnService : VpnService() {
             if (udp.dstPort != 53 && udp.srcPort != 53) continue // only DNS lives here
 
             if (udp.payloadLen < 12) continue
-            val qname = DnsMessage.queryName(udp.payload, udp.payloadLen)
+            val parsed = DnsMessage.parseQuery(java.nio.ByteBuffer.wrap(udp.payload, 0, udp.payloadLen))
+            if (parsed == null) continue // don't forward garbage upstream
+            val qname = parsed.firstName
             val qcopy = udp.payload.copyOf(udp.payloadLen)
 
             // Resolve off the read thread so a slow upstream can't back up
             // the tunnel — netd retries anyway.
-            pool.execute {
-                val blocked = filter.isBlocked(qname)
-                val answer: ByteArray? = when {
-                    blocked -> DnsMessage.nxdomain(qcopy, qcopy.size)
-                    upstream.proto == DnsResolver.Proto.UDP && upstream.host.isEmpty() ->
-                        systemResolve(qcopy)
-                    else -> DnsResolver.resolve(this@ShieldVpnService, upstream, qcopy, qcopy.size)
-                }
-                val wire = answer ?: DnsMessage.servfail(qcopy, qcopy.size)
+            try {
+                workers.execute {
+                    val blocked = filter.isBlocked(qname)
+                    val answer: ByteArray? = when {
+                        blocked -> DnsMessage.nxdomain(qcopy, qcopy.size)
+                        upstream.proto == DnsResolver.Proto.UDP && upstream.host.isEmpty() ->
+                            systemResolve(qcopy)
+                        else -> DnsResolver.resolve(this@ShieldVpnService, upstream, qcopy, qcopy.size)
+                    }
+                    val wire = answer ?: DnsMessage.servfail(qcopy, qcopy.size)
 
-                prefs.queryCount += 1
-                if (blocked) prefs.blockedCount += 1
-                if (prefs.logQueries && qname.isNotEmpty())
-                    QueryLog.add(QueryLog.Entry(qname, blocked, upstreamLabel))
+                    synchronized(counterLock) {
+                        prefs.queryCount += 1
+                        if (blocked) prefs.blockedCount += 1
+                    }
+                    if (prefs.logQueries && qname.isNotEmpty())
+                        QueryLog.add(QueryLog.Entry(qname, blocked, upstreamLabel))
 
-                synchronized(output) {
-                    runCatching { output.write(Packet.buildUdpResponse(udp, wire)) }
+                    synchronized(output) {
+                        runCatching { output.write(Packet.buildUdpResponse(udp, wire)) }
+                    }
                 }
-            }
+            } catch (_: java.util.concurrent.RejectedExecutionException) { break }
         }
-        pool.shutdownNow()
+        workers.shutdownNow()
     }
 
     /** "System" upstream = the device's real DNS before the VPN (DHCP servers). */
@@ -213,8 +224,13 @@ class ShieldVpnService : VpnService() {
             .setOngoing(true)
             .build()
         if (Build.VERSION.SDK_INT >= 34)
-            startForeground(NOTIF_ID, n, ServiceInfo.FOREGROUND_SERVICE_TYPE_SYSTEM_EXEMPTED)
+            startForeground(NOTIF_ID, n, ServiceInfo.FOREGROUND_SERVICE_TYPE_SPECIAL_USE)
         else startForeground(NOTIF_ID, n)
+    }
+
+    /** System revoked the tunnel (always-on off, another VPN took over). */
+    override fun onRevoke() {
+        shutdown()
     }
 
     override fun onDestroy() {

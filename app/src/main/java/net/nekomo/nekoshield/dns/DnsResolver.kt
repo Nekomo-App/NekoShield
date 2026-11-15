@@ -100,10 +100,18 @@ object DnsResolver {
             val raw = Socket()
             vpn?.protect(raw)
             raw.connect(InetSocketAddress(InetAddress.getByName(up.host), up.port), 5000)
+            // TLS peers against the hostname (dohHost), not the IP literal —
+            // otherwise SNI is wrong and nothing verifies the certificate.
+            val peer = up.dohHost.ifEmpty { up.host }
             val factory = SSLSocketFactory.getDefault() as SSLSocketFactory
-            factory.createSocket(raw, up.host, up.port, true).apply {
+            factory.createSocket(raw, peer, up.port, true).apply {
                 soTimeout = 8000
-                (this as javax.net.ssl.SSLSocket).startHandshake()
+                (this as javax.net.ssl.SSLSocket).apply {
+                    sslParameters = sslParameters.apply {
+                        endpointIdentificationAlgorithm = "HTTPS"
+                    }
+                    startHandshake()
+                }
             }
         } catch (_: Exception) { null }
     }
