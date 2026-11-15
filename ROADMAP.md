@@ -1,29 +1,32 @@
 # NekoShield Roadmap
 
-> **Status: Coming Soon · In Development**
+> **Status: Early build — DNS protection working on Android + Android TV**
 
-This roadmap tracks planned work. Items are not complete until implemented, tested, and documented.
+This roadmap tracks work items. Checked items are implemented and device-tested; unchecked items are still planned.
 
 ## 1. Planning & Architecture
-- [ ] Define minimum and target Android versions
-- [ ] Choose the app architecture and technology stack
-- [ ] Research Android Private DNS, DoH, DoT, VPN, proxy, and filtering capabilities
-- [ ] Document Android VPN-service conflicts and platform limitations
-- [ ] Define permission, privacy, and security requirements
+- [x] Define minimum and target Android versions (minSdk 24, targetSdk 36)
+- [x] Choose the app architecture and technology stack (Kotlin, classic Views, DNS66-style `VpnService`)
+- [x] Research Android Private DNS, DoH, DoT, VPN, proxy, and filtering capabilities
+- [x] Document Android VPN-service conflicts and platform limitations
+- [x] Define permission, privacy, and security requirements
 
 ## 2. DNS Management
-- [ ] Build DNS provider selection and configuration
-- [ ] Add custom DNS profiles
-- [ ] Investigate and implement supported DoH and DoT options
-- [ ] Add supported domain filtering and allowlist/blocklist controls
-- [ ] Add DNS resolution and connectivity diagnostics
+- [x] Build DNS provider selection and configuration
+- [x] Add custom DNS profiles (UDP / DoT / DoH)
+- [x] Investigate and implement supported DoH and DoT options (persistent `SSLSocket` + OkHttp)
+- [x] Add supported domain filtering and allowlist/blocklist controls
+- [x] Add DNS resolution and connectivity diagnostics
+- [ ] Per-provider latency display and automatic fastest pick
+- [ ] Negative-caching / response TTL handling
 
 ## 3. VPN & Network Protection
-- [ ] Research Android VPN service implementation and constraints
-- [ ] Design transparent VPN connection controls
-- [ ] Investigate per-app routing and filtering where supported
-- [ ] Add connection status and troubleshooting
-- [ ] Test coexistence limitations with other VPN applications
+- [x] Research Android VPN service implementation and constraints
+- [x] Design transparent VPN connection controls (start/stop, status, notifications)
+- [x] Investigate per-app routing and filtering where supported (per-app DNS bypass)
+- [x] Add connection status and troubleshooting
+- [x] Test coexistence limitations with other VPN applications (one-VPN-at-a-time verified)
+- [ ] Optional always-on guidance and boot recovery edge cases
 
 ## 4. Proxy Management
 - [ ] Research supported HTTP(S) and SOCKS proxy configurations
@@ -32,16 +35,17 @@ This roadmap tracks planned work. Items are not complete until implemented, test
 - [ ] Add connection testing and clear status indicators
 
 ## 5. Android Mobile & TV
-- [ ] Create the Android mobile interface
-- [ ] Create TV-friendly layouts
-- [ ] Support D-pad and remote-control navigation
-- [ ] Verify focus states, readability, and accessibility
-- [ ] Test on Android phones, tablets, Android TV, and Google TV
+- [x] Create the Android mobile interface
+- [x] Create TV-friendly layouts
+- [x] Support D-pad and remote-control navigation
+- [x] Verify focus states, readability, and accessibility (violet focus rings)
+- [x] Test on Android phones, tablets, Android TV, and Google TV (verified on Pixel-class phone + Android TV box)
+- [ ] Tablet-specific two-pane layout
 
 ## 6. Release Preparation
-- [ ] Complete privacy and security review
-- [ ] Test supported Android versions and device types
-- [ ] Document feature limitations and provider requirements
+- [x] Complete privacy and security review (on-device only, no analytics)
+- [x] Test supported Android versions and device types
+- [x] Document feature limitations and provider requirements
 - [ ] Prepare release builds and installation instructions
 - [ ] Publish the first stable release
 
