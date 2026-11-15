@@ -204,7 +204,7 @@ class ShieldVpnService : VpnService() {
         val stop = PendingIntent.getService(this, 1, Intent(this, ShieldVpnService::class.java).setAction(ACTION_STOP),
             PendingIntent.FLAG_IMMUTABLE)
         val n: Notification = NotificationCompat.Builder(this, CHANNEL)
-            .setSmallIcon(android.R.drawable.ic_lock_lock)
+            .setSmallIcon(R.drawable.ic_shield)
             .setContentTitle("NekoShield active")
             .setContentText("DNS protection on — tap to open")
             .setContentIntent(pi)

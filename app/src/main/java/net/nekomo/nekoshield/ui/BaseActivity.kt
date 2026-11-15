@@ -27,7 +27,7 @@ abstract class BaseActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         val root = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
-            setBackgroundColor(Color.parseColor("#0B0B0E"))
+            setBackgroundColor(getColor(R.color.bg))
         }
         val scroll = ScrollView(this)
         body = LinearLayout(this).apply {
@@ -68,7 +68,7 @@ abstract class BaseActivity : AppCompatActivity() {
     protected fun section(text: String): TextView {
         val t = TextView(this).apply {
             this.text = text.uppercase()
-            setTextColor(getColor(R.color.accent))
+            setTextColor(getColor(R.color.accent_soft))
             textSize = 12f
             typeface = Typeface.DEFAULT_BOLD
             setPadding(0, dp(20), 0, dp(8))
@@ -87,7 +87,8 @@ abstract class BaseActivity : AppCompatActivity() {
             isFocusable = true
             isClickable = true
             background = GradientDrawable().apply {
-                setColor(getColor(R.color.card)); cornerRadius = dp(12).toFloat()
+                setColor(getColor(R.color.card)); cornerRadius = dp(16).toFloat()
+                setStroke(dp(1), getColor(R.color.border))
             }
             val lp = LinearLayout.LayoutParams(
                 ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT)
@@ -117,11 +118,11 @@ abstract class BaseActivity : AppCompatActivity() {
         return r
     }
 
-    /** Big accent action row (start/stop, update lists…). */
+    /** Big pill action row (start/stop, update lists…) — M3 filled-button style. */
     protected fun action(text: String, danger: Boolean = false, onClick: () -> Unit): TextView {
         val a = TextView(this).apply {
             this.text = text
-            setTextColor(Color.WHITE)
+            setTextColor(if (danger) getColor(R.color.bad) else getColor(R.color.on_accent))
             textSize = 16f
             typeface = Typeface.DEFAULT_BOLD
             gravity = Gravity.CENTER
@@ -129,8 +130,8 @@ abstract class BaseActivity : AppCompatActivity() {
             isFocusable = true
             isClickable = true
             background = GradientDrawable().apply {
-                setColor(if (danger) getColor(R.color.bad) else getColor(R.color.accent))
-                cornerRadius = dp(12).toFloat()
+                setColor(if (danger) getColor(R.color.danger_bg) else getColor(R.color.accent_soft))
+                cornerRadius = dp(28).toFloat()
             }
             val lp = LinearLayout.LayoutParams(
                 ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT)

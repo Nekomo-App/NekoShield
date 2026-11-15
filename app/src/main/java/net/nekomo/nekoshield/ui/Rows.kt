@@ -47,15 +47,19 @@ class RowAdapter(private val items: MutableList<Row> = mutableListOf()) :
             layoutParams = LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f)
         }
         val t = TextView(ctx).apply {
-            setTextColor(Color.WHITE); textSize = 15f; typeface = Typeface.DEFAULT_BOLD
+            setTextColor(ctx.getColor(net.nekomo.nekoshield.R.color.text)); textSize = 15f; typeface = Typeface.DEFAULT_BOLD
         }
         val s = TextView(ctx).apply {
-            setTextColor(0xFF9CA3AF.toInt()); textSize = 12f; setPadding(0, dp(ctx, 3), 0, 0)
+            setTextColor(ctx.getColor(net.nekomo.nekoshield.R.color.muted)); textSize = 12f; setPadding(0, dp(ctx, 3), 0, 0)
         }
         texts.addView(t); texts.addView(s)
         val tag = TextView(ctx).apply {
             textSize = 11f; typeface = Typeface.DEFAULT_BOLD
             setPadding(dp(ctx, 10), dp(ctx, 4), dp(ctx, 10), dp(ctx, 4))
+            background = GradientDrawable().apply {
+                setColor(ctx.getColor(net.nekomo.nekoshield.R.color.accent_container))
+                cornerRadius = dp(ctx, 12).toFloat()
+            }
         }
         root.addView(texts); root.addView(tag)
         return VH(root, t, s, tag)
@@ -71,7 +75,8 @@ class RowAdapter(private val items: MutableList<Row> = mutableListOf()) :
         } else {
             h.tag.visibility = View.VISIBLE
             h.tag.text = r.tag
-            h.tag.setTextColor(r.tagColor.takeIf { it != 0 } ?: 0xFF9CA3AF.toInt())
+            h.tag.setTextColor(r.tagColor.takeIf { it != 0 }
+                ?: h.root.context.getColor(net.nekomo.nekoshield.R.color.accent_soft))
         }
         h.root.setOnClickListener { r.onClick?.invoke() }
         h.root.setOnLongClickListener { r.onLong?.invoke(); r.onLong != null }
@@ -85,10 +90,11 @@ class RowAdapter(private val items: MutableList<Row> = mutableListOf()) :
 
         /** Rounded row bg that lights up on D-pad/touch focus. */
         fun focusBg(ctx: Context): GradientDrawable {
-            val normal = GradientDrawable().apply {
-                setColor(0xFF18181B.toInt()); cornerRadius = dp(ctx, 14).toFloat()
+            return GradientDrawable().apply {
+                setColor(ctx.getColor(net.nekomo.nekoshield.R.color.card))
+                cornerRadius = dp(ctx, 16).toFloat()
+                setStroke(dp(ctx, 1), ctx.getColor(net.nekomo.nekoshield.R.color.border))
             }
-            return normal
         }
     }
 }
@@ -99,13 +105,14 @@ fun attachFocusFx(v: View) {
     val bg = v.background
     v.setOnFocusChangeListener { view, has ->
         if (bg is GradientDrawable) {
+            val ctx = view.context
             if (has) {
-                bg.setColor(0xFF2E2E36.toInt())
-                bg.setStroke(2, 0xFF8B5CF6.toInt())
+                bg.setColor(ctx.getColor(net.nekomo.nekoshield.R.color.card_focus))
+                bg.setStroke(3, ctx.getColor(net.nekomo.nekoshield.R.color.accent_soft))
                 view.elevation = 6f
             } else {
-                bg.setColor(0xFF18181B.toInt())
-                bg.setStroke(0, 0)
+                bg.setColor(ctx.getColor(net.nekomo.nekoshield.R.color.card))
+                bg.setStroke(2, ctx.getColor(net.nekomo.nekoshield.R.color.border))
                 view.elevation = 0f
             }
         }

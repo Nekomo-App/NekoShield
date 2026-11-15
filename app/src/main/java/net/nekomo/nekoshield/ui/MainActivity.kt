@@ -61,15 +61,39 @@ class MainActivity : BaseActivity() {
     }
 
     override fun build() {
-        title("NekoShield")
-        subtitle("Private DNS and filtering — your queries, your rules.")
+        // Logo + title header
+        val header = LinearLayout(this).apply {
+            orientation = LinearLayout.HORIZONTAL
+            gravity = Gravity.CENTER_VERTICAL
+            setPadding(0, 0, 0, dp(14))
+        }
+        header.addView(android.widget.ImageView(this).apply {
+            setImageResource(R.drawable.nekoshield_logo)
+            layoutParams = LinearLayout.LayoutParams(dp(56), dp(56))
+        })
+        val names = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            setPadding(dp(14), 0, 0, 0)
+        }
+        names.addView(TextView(this).apply {
+            text = "NekoShield"; setTextColor(Color.WHITE)
+            textSize = 26f; typeface = Typeface.DEFAULT_BOLD
+        })
+        names.addView(TextView(this).apply {
+            text = "Private DNS and filtering — your queries, your rules."
+            setTextColor(getColor(R.color.muted)); textSize = 13f
+            setPadding(0, dp(2), 0, 0)
+        })
+        header.addView(names)
+        body.addView(header)
 
         // Status hero
         val hero = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
             setPadding(dp(18), dp(16), dp(18), dp(16))
             background = GradientDrawable().apply {
-                setColor(getColor(R.color.card)); cornerRadius = dp(16).toFloat()
+                setColor(getColor(R.color.card)); cornerRadius = dp(20).toFloat()
+                setStroke(dp(1), getColor(R.color.border))
             }
         }
         val top = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL; gravity = Gravity.CENTER_VERTICAL }
@@ -125,7 +149,8 @@ class MainActivity : BaseActivity() {
             orientation = LinearLayout.VERTICAL
             setPadding(dp(16), dp(14), dp(16), dp(14))
             background = GradientDrawable().apply {
-                setColor(getColor(R.color.card)); cornerRadius = dp(14).toFloat()
+                setColor(getColor(R.color.card)); cornerRadius = dp(16).toFloat()
+                setStroke(dp(1), getColor(R.color.border))
             }
             val lp = LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f)
             lp.setMargins(0, 0, dp(8), 0)
@@ -161,15 +186,17 @@ class MainActivity : BaseActivity() {
             statusText.text = "Protection active"
             statusSub.text = "Upstream: ${ShieldVpnService.upstreamLabel.ifEmpty { "system" }} · DNS-only tunnel"
             activateBtn.text = "Stop protection"
+            activateBtn.setTextColor(getColor(R.color.bad))
             (activateBtn.background as? android.graphics.drawable.GradientDrawable)
-                ?.setColor(getColor(R.color.bad))
+                ?.setColor(getColor(R.color.danger_bg))
         } else {
             statusDot.setTextColor(getColor(R.color.bad))
             statusText.text = "Protection off"
             statusSub.text = "Your DNS is unfiltered"
             activateBtn.text = "Activate protection"
+            activateBtn.setTextColor(getColor(R.color.on_accent))
             (activateBtn.background as? android.graphics.drawable.GradientDrawable)
-                ?.setColor(getColor(R.color.accent))
+                ?.setColor(getColor(R.color.accent_soft))
         }
         queriesTv.text = p.queryCount.toString()
         blockedTv.text = p.blockedCount.toString()
