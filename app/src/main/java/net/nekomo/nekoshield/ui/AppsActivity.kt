@@ -23,9 +23,10 @@ class AppsActivity : BaseActivity() {
 
         section("Installed apps")
         val pm = packageManager
-        val apps = if (Build.VERSION.SDK_INT >= 33)
+        val raw = if (Build.VERSION.SDK_INT >= 33)
             pm.getInstalledApplications(PackageManager.ApplicationInfoFlags.of(0))
         else @Suppress("DEPRECATION") pm.getInstalledApplications(0)
+        val apps = raw
             .filter { it.packageName != packageName }
             .filter { pm.getLaunchIntentForPackage(it.packageName) != null } // launchable = real apps
             .sortedBy { pm.getApplicationLabel(it).toString().lowercase() }

@@ -28,7 +28,7 @@ class LogActivity : BaseActivity() {
             note("Nothing yet - activate protection and browse around.")
         }
         for (e in entries.take(200)) {
-            row(e.domain, "${fmt.format(Date(e.at))} · ${e.resolver}",
+            row(e.domain, "${fmt.format(Date(e.at))} Â· ${e.resolver}",
                 if (e.blocked) "BLOCKED" else "OK") {}
         }
         if (entries.isNotEmpty()) {

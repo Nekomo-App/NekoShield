@@ -51,11 +51,22 @@ class ProvidersActivity : BaseActivity() {
 
     private fun customDialog() {
         val ctx = this
-        val host = EditText(ctx).apply { hint = "Host, IP, or https:// URL" }
-        val port = EditText(ctx).apply { hint = "Port (53 / 853 / 443)"; setText("53") }
-        val name = EditText(ctx).apply { hint = "Label (e.g. My Pi-hole)" }
         val protos = arrayOf("Plain UDP", "DNS-over-TLS", "DNS-over-HTTPS")
-        var proto = 0
+        AlertDialog.Builder(ctx)
+            .setTitle("Protocol")
+            .setItems(protos) { _, proto -> fieldsDialog(proto) }
+            .setNegativeButton("Cancel", null)
+            .show()
+    }
+
+    private fun fieldsDialog(proto: Int) {
+        val ctx = this
+        val host = EditText(ctx).apply { hint = "Host, IP, or https:// URL" }
+        val port = EditText(ctx).apply {
+            hint = "Port"
+            setText(if (proto == 1) "853" else if (proto == 2) "443" else "53")
+        }
+        val name = EditText(ctx).apply { hint = "Label (e.g. My Pi-hole)" }
         val layout = LinearLayout(ctx).apply {
             orientation = LinearLayout.VERTICAL
             setPadding(48, 24, 48, 0)
@@ -63,7 +74,6 @@ class ProvidersActivity : BaseActivity() {
         }
         AlertDialog.Builder(ctx)
             .setTitle("Custom DNS server")
-            .setSingleChoiceItems(protos, 0) { _, w -> proto = w }
             .setView(layout)
             .setPositiveButton("Save") { _, _ ->
                 val p = Prefs.get(ctx)

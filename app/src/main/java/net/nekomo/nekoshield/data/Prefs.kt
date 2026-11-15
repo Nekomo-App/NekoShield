@@ -55,6 +55,14 @@ class Prefs private constructor(ctx: Context) {
         get() = sp.getBoolean("start_on_boot", false)
         set(v) = sp.edit().putBoolean("start_on_boot", v).apply()
 
+    var autoUpdate: Boolean
+        get() = sp.getBoolean("auto_update", true)
+        set(v) = sp.edit().putBoolean("auto_update", v).apply()
+
+    var lastUpdateCheck: Long
+        get() = sp.getLong("last_update_check", 0)
+        set(v) = sp.edit().putLong("last_update_check", v).apply()
+
     var blockedCount: Long
         get() = sp.getLong("stat_blocked", 0)
         set(v) = sp.edit().putLong("stat_blocked", v).apply()

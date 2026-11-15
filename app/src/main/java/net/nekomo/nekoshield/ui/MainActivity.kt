@@ -61,6 +61,8 @@ class MainActivity : BaseActivity() {
     }
 
     override fun build() {
+        showSplash()
+
         // Logo + title header
         val header = LinearLayout(this).apply {
             orientation = LinearLayout.HORIZONTAL
@@ -142,6 +144,61 @@ class MainActivity : BaseActivity() {
         row("Settings", "Startup, logging, and about") {
             startActivity(Intent(this, SettingsActivity::class.java))
         }
+
+        UpdateUi.autoCheck(this)
+    }
+
+    /** Branded cold-start splash — logo pops in, holds, fades into the dashboard. */
+    private fun showSplash() {
+        val overlay = android.widget.FrameLayout(this).apply {
+            setBackgroundColor(getColor(R.color.bg))
+        }
+        val col = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            gravity = Gravity.CENTER_HORIZONTAL
+        }
+        val logo = android.widget.ImageView(this).apply {
+            setImageResource(R.drawable.nekoshield_logo)
+            layoutParams = LinearLayout.LayoutParams(dp(130), dp(130))
+            alpha = 0f; scaleX = 0.72f; scaleY = 0.72f
+        }
+        val name = TextView(this).apply {
+            text = "NEKO SHIELD"; setTextColor(getColor(R.color.text))
+            textSize = 24f; typeface = Typeface.DEFAULT_BOLD
+            letterSpacing = 0.18f
+            gravity = Gravity.CENTER
+            setSingleLine(true)
+            layoutParams = LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT)
+            setPadding(0, dp(18), 0, 0)
+            alpha = 0f
+        }
+        val tagline = TextView(this).apply {
+            text = "DNS · PROXY · PRIVACY"; setTextColor(getColor(R.color.accent_soft))
+            textSize = 12f; typeface = Typeface.DEFAULT_BOLD
+            letterSpacing = 0.3f
+            gravity = Gravity.CENTER
+            setSingleLine(true)
+            layoutParams = LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT)
+            setPadding(0, dp(8), 0, 0)
+            alpha = 0f
+        }
+        col.addView(logo); col.addView(name); col.addView(tagline)
+        overlay.addView(col, android.widget.FrameLayout.LayoutParams(
+            ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT, Gravity.CENTER))
+        addContentView(overlay, ViewGroup.LayoutParams(
+            ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT))
+
+        logo.animate().alpha(1f).scaleX(1f).scaleY(1f).setDuration(420)
+            .setInterpolator(android.view.animation.DecelerateInterpolator()).start()
+        name.animate().alpha(1f).setStartDelay(200).setDuration(300).start()
+        tagline.animate().alpha(1f).setStartDelay(320).setDuration(300).start()
+        overlay.postDelayed({
+            overlay.animate().alpha(0f).setDuration(320).withEndAction {
+                (overlay.parent as? ViewGroup)?.removeView(overlay)
+            }.start()
+        }, 1150)
     }
 
     private fun statCard(parent: LinearLayout, label: String): TextView {
