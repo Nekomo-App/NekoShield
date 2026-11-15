@@ -198,7 +198,8 @@ class ShieldVpnService : VpnService() {
 
     private fun foregroundNotify() {
         val nm = getSystemService(NOTIFICATION_SERVICE) as NotificationManager
-        nm.createNotificationChannel(NotificationChannel(CHANNEL, "NekoShield", NotificationManager.IMPORTANCE_LOW))
+        if (Build.VERSION.SDK_INT >= 26)
+            nm.createNotificationChannel(NotificationChannel(CHANNEL, "NekoShield", NotificationManager.IMPORTANCE_LOW))
         val pi = PendingIntent.getActivity(this, 0, Intent(this, MainActivity::class.java),
             PendingIntent.FLAG_IMMUTABLE)
         val stop = PendingIntent.getService(this, 1, Intent(this, ShieldVpnService::class.java).setAction(ACTION_STOP),
