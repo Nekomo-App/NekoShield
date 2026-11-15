@@ -117,6 +117,13 @@ object Updater {
             .setDataAndType(uri, "application/vnd.android.package-archive")
             .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
             .addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+        // Third-party APK handlers (SAI, Acode, …) also claim this intent and
+        // trigger a chooser — pin it to the ROM's own package installer.
+        listOf("com.google.android.packageinstaller", "com.android.packageinstaller",
+            "com.samsung.android.packageinstaller", "com.miui.packageinstaller",
+            "com.oplus.packageinstaller", "com.vivo.packageinstaller")
+            .firstOrNull { pkg -> runCatching { ctx.packageManager.getPackageInfo(pkg, 0); true }.getOrDefault(false) }
+            ?.let { i.setPackage(it) }
         ctx.startActivity(i)
     }
 }
