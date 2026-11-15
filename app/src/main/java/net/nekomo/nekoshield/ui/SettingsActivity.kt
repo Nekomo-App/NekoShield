@@ -50,7 +50,7 @@ class SettingsActivity : BaseActivity() {
             else @Suppress("DEPRECATION") info.versionCode.toLong()
         row("Version", "${info.versionName} ($vc)") {}
         row("Privacy notes", "What NekoShield does and does not see") { privacyDialog() }
-        row("Open-source licenses", "OkHttp · AndroidX · Kotlin") {}
+        row("Open-source licenses", "OkHttp · AndroidX · Kotlin") { licensesDialog() }
     }
 
     private fun checkUpdate(manual: Boolean) {
@@ -58,9 +58,10 @@ class SettingsActivity : BaseActivity() {
         lifecycleScope.launch {
             val rel = try {
                 withContext(Dispatchers.IO) { Updater.fetchUpdate() }
-            } catch (_: Exception) {
+            } catch (e: Exception) {
+                android.util.Log.w("NekoShield", "update check failed", e)
                 if (manual) AlertDialog.Builder(ctx)
-                    .setMessage("Couldn't reach GitHub — check the connection and retry.")
+                    .setMessage("Couldn't reach GitHub — check the connection and retry.\n\n(${e.javaClass.simpleName}: ${e.message})")
                     .setPositiveButton("OK", null).show()
                 return@launch
             }
@@ -81,6 +82,20 @@ class SettingsActivity : BaseActivity() {
                 "queries anywhere except to the DNS provider you choose.\n\n" +
                 "The log lives only in memory and clears when the app closes. " +
                 "Blocklists download over HTTPS and stay on the device.")
+            .setPositiveButton("OK", null)
+            .show()
+    }
+
+    private fun licensesDialog() {
+        AlertDialog.Builder(this)
+            .setTitle("Open-source licenses")
+            .setMessage("NekoShield builds on these open-source projects.\n\n" +
+                "OkHttp — Square, Inc.\nApache License 2.0\n\n" +
+                "AndroidX (Core, AppCompat, Material, Lifecycle, Preference, RecyclerView, " +
+                "ConstraintLayout, LocalBroadcastManager) — Google\nApache License 2.0\n\n" +
+                "Kotlin — JetBrains\nApache License 2.0\n\n" +
+                "Remote blocklists (StevenBlack, HaGeZi, AdGuard, OISD) remain the property " +
+                "of their maintainers; see each list's own license on its project page.")
             .setPositiveButton("OK", null)
             .show()
     }
