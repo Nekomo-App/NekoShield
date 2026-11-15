@@ -32,15 +32,12 @@ object Updater {
         val prerelease: Boolean,
     )
 
-    /** Newest release whose tag is numerically newer than the installed version. */
+    /** Newest release whose tag is numerically newer than the installed version.
+     * null = checked and you're current; throws when GitHub can't be reached. */
     fun fetchUpdate(): Release? {
-        try { return fetchUpdateInner() } catch (_: Exception) { return null }
-    }
-
-    private fun fetchUpdateInner(): Release? {
         val req = Request.Builder().url(API).header("Accept", "application/vnd.github+json").build()
         http.newCall(req).execute().use { res ->
-            if (!res.isSuccessful) return null
+            if (!res.isSuccessful) throw java.io.IOException("github ${res.code}")
             val arr = JSONArray(res.body?.string() ?: return null)
             for (i in 0 until arr.length()) {
                 val o = arr.getJSONObject(i)
@@ -61,8 +58,8 @@ object Updater {
                     apkUrl = apk,
                     prerelease = o.optBoolean("prerelease"))
             }
+            return null
         }
-        return null
     }
 
     /** "v0.1.1-alpha" > "0.1.0" — compares numeric dot-segments, ignores suffixes. */

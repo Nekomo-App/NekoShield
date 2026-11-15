@@ -56,7 +56,14 @@ class SettingsActivity : BaseActivity() {
     private fun checkUpdate(manual: Boolean) {
         val ctx = this
         lifecycleScope.launch {
-            val rel = withContext(Dispatchers.IO) { Updater.fetchUpdate() }
+            val rel = try {
+                withContext(Dispatchers.IO) { Updater.fetchUpdate() }
+            } catch (_: Exception) {
+                if (manual) AlertDialog.Builder(ctx)
+                    .setMessage("Couldn't reach GitHub — check the connection and retry.")
+                    .setPositiveButton("OK", null).show()
+                return@launch
+            }
             Prefs.get(ctx).lastUpdateCheck = System.currentTimeMillis()
             if (rel == null) {
                 if (manual) AlertDialog.Builder(ctx)

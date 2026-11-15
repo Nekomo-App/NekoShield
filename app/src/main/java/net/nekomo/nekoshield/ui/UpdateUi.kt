@@ -62,7 +62,8 @@ object UpdateUi {
         if (!p.autoUpdate) return
         if (System.currentTimeMillis() - p.lastUpdateCheck < 24L * 3600 * 1000) return
         ctx.lifecycleScope.launch {
-            val rel = withContext(Dispatchers.IO) { Updater.fetchUpdate() }
+            val rel = try { withContext(Dispatchers.IO) { Updater.fetchUpdate() } }
+                catch (_: Exception) { null }
             p.lastUpdateCheck = System.currentTimeMillis()
             if (rel != null) offer(ctx, rel)
         }
