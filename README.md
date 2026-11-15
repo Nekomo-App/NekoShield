@@ -15,7 +15,8 @@ Inspired by the broad network-control approach of projects such as [Rethink DNS]
 - **Provider presets** — Cloudflare, Cloudflare Family, Google, Quad9, AdGuard, AdGuard Family, Mullvad, plus DoH endpoints for networks that block port 853.
 - **Custom DNS** — plain UDP, DNS-over-TLS, or DNS-over-HTTPS endpoint of your choice.
 - **Encrypted DNS** — DoT via persistent `SSLSocket`, DoH via OkHttp.
-- **Remote blocklists** — StevenBlack Unified, HaGeZi, OISD, AdGuard DNS filter, MVT indicators; downloaded over HTTPS and stored on-device.
+- **Remote blocklists** — an AdGuard-style categorized catalog (Ad blocking, Tracking protection, Security, Annoyances, Adult & other) with 20+ free lists: StevenBlack, HaGeZi (Light/Normal/Pro/TIF/native/gambling/fake/popup-ads), OISD, AdGuard DNS Filter, AdAway, Dan Pollock, 1Hosts, Phishing Army, WindowsSpyBlocker, Amnesty NSO indicators, and more. Each list shows its domain count and last-update date, and can be toggled individually.
+- **Custom filter lists** — add any public hosts/domain/adblock-format list URL; it is downloaded, counted, and updated alongside the built-in ones.
 - **User rules** — personal allow/block lists; allow always wins.
 - **Per-app bypass** — pick apps whose DNS skips the tunnel.
 - **Query log** — last 500 decisions, in-memory only, never uploaded.
@@ -36,6 +37,7 @@ Only the two virtual DNS IPs (`10.55.66.2`, `10.55.66.3`) are routed into the tu
 - The query log lives in memory and clears when the app closes; nothing is uploaded.
 - Blocklists download over HTTPS and stay on-device.
 - No analytics, no accounts, no secrets committed.
+- In-app legal docs: privacy policy, terms of use, disclaimer, and DMCA/contact info ship inside Settings → Legal and in the repo (`PRIVACY.md`, `TERMS.md`, `DISCLAIMER.md`, `DMCA.md`).
 - **One VPN at a time** — Android allows a single active VPN per user/profile. Turning NekoShield on asks other VPN apps to stop; it never silently takes over. Always-on and lockdown work with Android's own VPN settings.
 - No promise of anonymity or complete ad blocking — coverage depends on your lists and provider.
 
@@ -60,6 +62,8 @@ Requires JDK 17 and the Android SDK. `local.properties` should point `sdk.dir` a
 ## Disclaimer
 
 NekoShield is an independent project within the Nekomo organization. Rethink DNS is referenced only as an example; NekoShield is not affiliated with it. Third-party provider names belong to their owners. Results depend on the selected providers, active configuration, and Android version.
+
+Legal documents ship in the repo and inside the app under Settings → Legal: [Privacy Policy](PRIVACY.md) · [Terms of Use](TERMS.md) · [Disclaimer](DISCLAIMER.md) · [DMCA & Content Removal](DMCA.md)
 
 ## Links
 

@@ -1,0 +1,19 @@
+PRIVACY POLICY — NekoShield
+
+NekoShield is a local DNS filter. It is designed so that your data stays on your device.
+
+What the app does with your data:
+• DNS lookups are answered by the resolver running inside the app. Queries for domains you have blocked never leave the device — they are refused locally.
+• Queries that are not blocked are forwarded to the single upstream DNS provider you selected (UDP, DNS-over-TLS, or DNS-over-HTTPS). That provider sees those queries under its own privacy policy. NekoShield does not send them anywhere else.
+• The query log lives only in memory on this device, is capped at 500 entries, and is erased when the app or the protection service stops. It is never uploaded.
+• Blocklists are downloaded over HTTPS directly to this device from their public hosts (GitHub, jsDelivr, OISD, and other list maintainers). Those requests go to the list hosts, who see your IP address like any web request. The downloaded lists stay on-device.
+• The update checker contacts the GitHub releases API for this repository, also over HTTPS.
+• Per-app bypass choices, rules, and settings are stored only in this app's private storage.
+
+What the app does NOT do:
+• No accounts, no sign-in, no advertising IDs.
+• No analytics, crash telemetry, or tracking SDKs.
+• No sale or sharing of personal data — there is nothing collected to sell.
+• No proxying of your web traffic: the VPN interface carries DNS packets only.
+
+Changes: this policy is versioned in the app's source repository; the copy shipped inside the app reflects the release you have installed.

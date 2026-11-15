@@ -120,9 +120,35 @@ class ShieldVpnService : VpnService() {
 
     private fun buildFilter(prefs: Prefs): FilterEngine {
         val blocked = HashSet<String>()
-        if (prefs.blocklistsEnabled) blocked += Blocklists.load(this, prefs.enabledLists)
+        if (prefs.blocklistsEnabled) {
+            blocked += Blocklists.load(this, prefs.enabledLists)
+            fetchMissingLists(prefs)
+        }
         blocked += prefs.userBlock
         return FilterEngine(blocked, prefs.userAllow)
+    }
+
+    @Volatile private var missingFetched = false
+
+    /** Enabled lists with no file on disk get fetched once, then the tunnel refreshes. */
+    private fun fetchMissingLists(prefs: Prefs) {
+        if (missingFetched) return
+        val missing = Blocklists.allLists(prefs).filter {
+            prefs.enabledLists.contains(it.id) && Blocklists.sizeOnDisk(this, it.id) == 0
+        }
+        if (missing.isEmpty()) return
+        missingFetched = true
+        Thread {
+            var ok = false
+            for (r in missing) {
+                try {
+                    kotlinx.coroutines.runBlocking { Blocklists.update(this@ShieldVpnService, r) }
+                    ok = true
+                } catch (_: Exception) {}
+            }
+            if (ok && running)
+                android.os.Handler(android.os.Looper.getMainLooper()).post { refresh() }
+        }.apply { isDaemon = true; name = "ns-list-fetch" }.start()
     }
 
     private fun loop(upstream: DnsResolver.Upstream, filter: FilterEngine) {

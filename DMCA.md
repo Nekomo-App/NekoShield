@@ -1,0 +1,11 @@
+# NekoShield — DMCA & Content Removal
+
+DMCA / CONTENT REMOVAL — NekoShield
+
+NekoShield does not host, store, index, link to, or distribute any third-party content. It is a DNS filtering tool.
+
+• The domain blocklists are fetched at runtime from their independent public maintainers and are not bundled content owned by this project.
+• If you believe a domain is incorrectly blocked, that entry comes from one of those lists — please report it to the list maintainer (each list shows its source in the Filters screen) or add the domain to your in-app allow list.
+• If you believe material in the NekoShield repository itself (code, documentation, artwork) infringes your copyright, send a notice containing the elements required by 17 U.S.C. §512 to the repository owner via a GitHub issue at https://github.com/Nekomo-App/NekoShield/issues or through GitHub's official DMCA process at https://docs.github.com/site-policy/content-removal-policies/dmca-takedown-policy.
+
+Counter-notices follow the same channel. The project will remove or disable genuinely infringing repository material upon a valid notice.

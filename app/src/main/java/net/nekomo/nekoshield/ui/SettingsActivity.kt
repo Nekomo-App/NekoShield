@@ -49,8 +49,13 @@ class SettingsActivity : BaseActivity() {
         val vc = if (Build.VERSION.SDK_INT >= 28) info.longVersionCode
             else @Suppress("DEPRECATION") info.versionCode.toLong()
         row("Version", "${info.versionName} ($vc)") {}
-        row("Privacy notes", "What NekoShield does and does not see") { privacyDialog() }
         row("Open-source licenses", "OkHttp · AndroidX · Kotlin") { licensesDialog() }
+
+        section("Legal")
+        row("Privacy policy", "What the app does and does not see") { legalDialog("Privacy policy", "privacy.txt") }
+        row("Terms of use", "Conditions for using NekoShield") { legalDialog("Terms of use", "terms.txt") }
+        row("Disclaimer", "Alpha software — read before relying on it") { legalDialog("Disclaimer", "disclaimer.txt") }
+        row("DMCA & content removal", "Copyright notices and unblock requests") { legalDialog("DMCA & content removal", "dmca.txt") }
     }
 
     private fun checkUpdate(manual: Boolean) {
@@ -74,14 +79,16 @@ class SettingsActivity : BaseActivity() {
         }
     }
 
-    private fun privacyDialog() {
+    private fun legalDialog(titleText: String, asset: String) {
+        val text = try {
+            // first line repeats the dialog title ("PRIVACY POLICY — NekoShield") — drop it
+            assets.open("legal/$asset").bufferedReader().readText().substringAfter('\n')
+        } catch (_: Exception) {
+            "The document could not be loaded. It is also available in the project repository."
+        }
         AlertDialog.Builder(this)
-            .setTitle("Privacy")
-            .setMessage("NekoShield answers DNS lookups on this device. " +
-                "It does not collect analytics, does not run an account, and does not send your " +
-                "queries anywhere except to the DNS provider you choose.\n\n" +
-                "The log lives only in memory and clears when the app closes. " +
-                "Blocklists download over HTTPS and stay on the device.")
+            .setTitle(titleText)
+            .setMessage(text.trim())
             .setPositiveButton("OK", null)
             .show()
     }

@@ -34,6 +34,11 @@ class Prefs private constructor(ctx: Context) {
         get() = sp.getStringSet("bl_ids", setOf("steven-black")) ?: setOf("steven-black")
         set(v) = sp.edit().putStringSet("bl_ids", v).apply()
 
+    /** User-added filter lists, stored as "name|url" entries. */
+    var customLists: Set<String>
+        get() = sp.getStringSet("bl_custom", emptySet()) ?: emptySet()
+        set(v) = sp.edit().putStringSet("bl_custom", v).apply()
+
     var userBlock: Set<String>
         get() = sp.getStringSet("user_block", emptySet()) ?: emptySet()
         set(v) = sp.edit().putStringSet("user_block", v).apply()
