@@ -39,6 +39,7 @@ class AppsActivity : BaseActivity() {
                 if (excluded.contains(app.packageName)) excluded.remove(app.packageName)
                 else excluded.add(app.packageName)
                 p.excludedApps = excluded
+                restartIfRunning()
                 recreate()
             }
             // Icon chip on the left

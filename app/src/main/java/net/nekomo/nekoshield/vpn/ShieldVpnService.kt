@@ -65,7 +65,14 @@ class ShieldVpnService : VpnService() {
         android.util.Log.i("NekoShield", "onStartCommand action=${intent?.action}")
         when (intent?.action) {
             ACTION_STOP -> { shutdown(); return START_NOT_STICKY }
-            else -> start()
+            // A null-intent sticky restart must not resurrect a tunnel the
+            // user turned off — only explicit START/refresh intents do.
+            else -> {
+                if (intent == null && !Prefs.get(this).enabled) {
+                    stopSelf(); return START_NOT_STICKY
+                }
+                start()
+            }
         }
         return START_STICKY
     }
@@ -77,6 +84,9 @@ class ShieldVpnService : VpnService() {
         val builder = Builder()
             .setSession("NekoShield")
             .setMtu(1500)
+            // Without this the tun fd is non-blocking: read() returns 0 on
+            // EAGAIN and the loop below would spin a full core while idle.
+            .setBlocking(true)
             .addAddress(TUN_ADDR, 32)
             .addDnsServer(DNS1)
             .addDnsServer(DNS2)
@@ -93,15 +103,17 @@ class ShieldVpnService : VpnService() {
         android.util.Log.i("NekoShield", "establish -> ${if (tun == null) "null (DENIED)" else "ok"}")
         if (tun == null) { stopSelf(); return }
 
+        // startForeground within the ~5s window: blocklists can take seconds
+        // to load, so notify first and build the filter on the read thread.
+        foregroundNotify()
+
         // Resolve which upstream answers queries.
         val upstream = upstreamFor(prefs)
         upstreamLabel = upstream.label.ifEmpty { upstream.host }
-        val filter = buildFilter(prefs)
 
-        foregroundNotify()
         quit.set(false)
         pool = Executors.newFixedThreadPool(8)
-        thread = Thread { loop(upstream, filter) }.apply {
+        thread = Thread { loop(upstream, buildFilter(prefs)) }.apply {
             name = "ns-tun"
             isDaemon = true
             start()
@@ -185,9 +197,13 @@ class ShieldVpnService : VpnService() {
                     }
                     val wire = answer ?: DnsMessage.servfail(qcopy, qcopy.size)
 
+                    // Batch counter writes — one SharedPreferences transaction
+                    // per DNS query would mean a disk write for every lookup
+                    // on the device.
                     synchronized(counterLock) {
-                        prefs.queryCount += 1
-                        if (blocked) prefs.blockedCount += 1
+                        pendingQueries += 1
+                        if (blocked) pendingBlocked += 1
+                        if (pendingQueries >= 32) flushCounters(prefs)
                     }
                     if (prefs.logQueries && qname.isNotEmpty())
                         QueryLog.add(QueryLog.Entry(qname, blocked, upstreamLabel))
@@ -198,7 +214,20 @@ class ShieldVpnService : VpnService() {
                 }
             } catch (_: java.util.concurrent.RejectedExecutionException) { break }
         }
+        synchronized(counterLock) { flushCounters(prefs) }
         workers.shutdownNow()
+    }
+
+    private var pendingQueries = 0
+    private var pendingBlocked = 0
+
+    /** Caller holds counterLock. */
+    private fun flushCounters(prefs: Prefs) {
+        if (pendingQueries == 0) return
+        prefs.queryCount += pendingQueries
+        prefs.blockedCount += pendingBlocked
+        pendingQueries = 0
+        pendingBlocked = 0
     }
 
     /** "System" upstream = the device's real DNS before the VPN (DHCP servers). */
@@ -220,6 +249,7 @@ class ShieldVpnService : VpnService() {
     private fun shutdown(restart: Boolean = false) {
         quit.set(true)
         running = false
+        runCatching { DnsResolver.closePersistent() }
         runCatching { tun?.close() }
         tun = null
         thread = null

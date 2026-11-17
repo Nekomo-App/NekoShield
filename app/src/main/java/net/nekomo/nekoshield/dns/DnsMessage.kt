@@ -52,7 +52,7 @@ object DnsMessage {
             if (len and 0xC0 == 0xC0) {
                 if (!buf.hasRemaining()) return null
                 val off = ((len and 0x3F) shl 8) or (buf.get().toInt() and 0xFF)
-                if (++jumps > 16) return null
+                if (++jumps > 16 || off >= buf.limit()) return null
                 if (!jumped) { jumped = true; resume = buf.position() }
                 buf.position(off)
                 continue

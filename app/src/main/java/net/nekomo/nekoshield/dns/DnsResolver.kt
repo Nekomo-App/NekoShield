@@ -37,12 +37,40 @@ object DnsResolver {
         .readTimeout(8, TimeUnit.SECONDS)
         .build()
 
+    // DoH needs its sockets protect()ed too, otherwise every query loops back
+    // into the tunnel — and under always-on "block connections without VPN"
+    // the self-disallowed app path is blocked outright. One client per
+    // VpnService instance; the factory tags each raw socket before TLS wraps it.
+    private var httpVpn: VpnService? = null
+    private var httpProtected: OkHttpClient? = null
+
+    @Synchronized
+    private fun dohClient(vpn: VpnService?): OkHttpClient {
+        if (vpn == null) return http
+        if (httpProtected != null && httpVpn === vpn) return httpProtected!!
+        val protect = { socket: Socket -> vpn.protect(socket); socket }
+        httpProtected = http.newBuilder()
+            .socketFactory(object : javax.net.SocketFactory() {
+                private val d = getDefault()
+                override fun createSocket() = protect(d.createSocket())
+                override fun createSocket(host: String?, port: Int) = protect(d.createSocket(host, port))
+                override fun createSocket(host: String?, port: Int, local: InetAddress?, localPort: Int) =
+                    protect(d.createSocket(host, port, local, localPort))
+                override fun createSocket(host: InetAddress?, port: Int) = protect(d.createSocket(host, port))
+                override fun createSocket(host: InetAddress?, port: Int, local: InetAddress?, localPort: Int) =
+                    protect(d.createSocket(host, port, local, localPort))
+            })
+            .build()
+        httpVpn = vpn
+        return httpProtected!!
+    }
+
     fun resolve(vpn: VpnService?, up: Upstream, query: ByteArray, qLen: Int): ByteArray? {
         return try {
             when (up.proto) {
                 Proto.UDP -> udp(vpn, up, query, qLen)
                 Proto.DOT -> dot(vpn, up, query, qLen)
-                Proto.DOH -> doh(up, query, qLen)
+                Proto.DOH -> doh(dohClient(vpn), up, query, qLen)
             }
         } catch (_: Exception) { null }
     }
@@ -66,32 +94,44 @@ object DnsResolver {
     private val dotSock = java.util.concurrent.ConcurrentHashMap<String, Socket>()
     private val dotLock = Any()
 
+    /** Drop every persistent DoT socket — call when the tunnel stops. */
+    fun closePersistent() {
+        synchronized(dotLock) {
+            dotSock.values.forEach { runCatching { it.close() } }
+            dotSock.clear()
+        }
+    }
+
     private fun dot(vpn: VpnService?, up: Upstream, query: ByteArray, qLen: Int): ByteArray? {
         val key = "${up.host}:${up.port}"
         synchronized(dotLock) {
-            var s = dotSock[key]
-            if (s == null || s.isClosed || !s.isConnected) {
-                s?.let { runCatching { it.close() } }
-                s = openDot(vpn, up) ?: return null
-                dotSock[key] = s
-            }
-            return try {
-                val out = DataOutputStream(s!!.getOutputStream())
-                out.writeShort(qLen)
-                out.write(query, 0, qLen)
-                out.flush()
-                val inp = DataInputStream(s!!.getInputStream())
-                val rlen = inp.readUnsignedShort()
-                if (rlen <= 0 || rlen > 65535) null else {
-                    val buf = ByteArray(rlen)
-                    inp.readFully(buf)
-                    DnsMessage.passthrough(query, qLen, buf, rlen)
+            // Retry once on a fresh socket: a reused connection the server
+            // already closed fails the first read after an idle gap.
+            for (attempt in 0..1) {
+                var s = dotSock[key]
+                if (s == null || s.isClosed || !s.isConnected) {
+                    s?.let { runCatching { it.close() } }
+                    s = openDot(vpn, up) ?: return null
+                    dotSock[key] = s
                 }
-            } catch (_: Exception) {
-                runCatching { s?.close() }
-                dotSock.remove(key)
-                null
+                try {
+                    val out = DataOutputStream(s!!.getOutputStream())
+                    out.writeShort(qLen)
+                    out.write(query, 0, qLen)
+                    out.flush()
+                    val inp = DataInputStream(s!!.getInputStream())
+                    val rlen = inp.readUnsignedShort()
+                    return if (rlen <= 0 || rlen > 65535) null else {
+                        val buf = ByteArray(rlen)
+                        inp.readFully(buf)
+                        DnsMessage.passthrough(query, qLen, buf, rlen)
+                    }
+                } catch (_: Exception) {
+                    runCatching { s?.close() }
+                    dotSock.remove(key)
+                }
             }
+            return null
         }
     }
 
@@ -116,14 +156,14 @@ object DnsResolver {
         } catch (_: Exception) { null }
     }
 
-    private fun doh(up: Upstream, query: ByteArray, qLen: Int): ByteArray? {
+    private fun doh(client: OkHttpClient, up: Upstream, query: ByteArray, qLen: Int): ByteArray? {
         val body = query.copyOf(qLen).toRequestBody("application/dns-message".toMediaType())
         val req = Request.Builder()
             .url(up.host)
             .header("Accept", "application/dns-message")
             .post(body)
             .build()
-        http.newCall(req).execute().use { r ->
+        client.newCall(req).execute().use { r ->
             if (!r.isSuccessful) return null
             val b = r.body?.bytes() ?: return null
             return DnsMessage.passthrough(query, qLen, b, b.size)

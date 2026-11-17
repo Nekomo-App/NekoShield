@@ -84,8 +84,11 @@ class ToolsActivity : BaseActivity() {
         for (net in cm.allNetworks) {
             val caps = cm.getNetworkCapabilities(net) ?: continue
             if (!caps.hasCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET)) continue
+            // The VPN's own network only ever lists the virtual tun DNS IPs —
+            // reporting them here looks exactly like a leak.
+            if (caps.hasTransport(NetworkCapabilities.TRANSPORT_VPN)) continue
             val lp: LinkProperties = cm.getLinkProperties(net) ?: continue
-            val dns = lp.dnsServers.filterIsInstance<Inet4Address>().map { it.hostAddress }
+            val dns = lp.dnsServers.map { it.hostAddress }
             if (dns.isNotEmpty()) sb.append("Network ${lp.interfaceName ?: "?"}: ${dns.joinToString(", ")}\n")
         }
         if (sb.isEmpty()) sb.append("No DNS servers exposed - the VPN tunnel is handling lookups.")

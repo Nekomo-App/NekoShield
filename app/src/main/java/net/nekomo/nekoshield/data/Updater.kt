@@ -41,6 +41,7 @@ object Updater {
             val arr = JSONArray(res.body?.string() ?: return null)
             for (i in 0 until arr.length()) {
                 val o = arr.getJSONObject(i)
+                if (o.optBoolean("draft")) continue
                 val tag = o.optString("tag_name")
                 if (!isNewer(tag, BuildConfig.VERSION_NAME)) continue
                 val assets = o.optJSONArray("assets") ?: continue

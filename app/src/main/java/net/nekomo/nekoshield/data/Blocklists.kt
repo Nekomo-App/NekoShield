@@ -121,7 +121,16 @@ object Blocklists {
         }
         android.util.Log.i("NekoShield", "list fetched ${remote.id}")
         val domains = parseHosts(body)
-        file(ctx, remote.id).writeText(domains.joinToString("\n"))
+        // Never clobber a good list with an empty/garbage fetch, and write
+        // atomically — a mid-write kill must not leave a truncated file.
+        if (domains.isEmpty()) throw IllegalStateException("parsed 0 domains")
+        val target = file(ctx, remote.id)
+        val tmp = File(target.parentFile, target.name + ".tmp")
+        tmp.writeText(domains.joinToString("\n"))
+        if (!tmp.renameTo(target)) {
+            target.delete()
+            tmp.renameTo(target)
+        }
         domains.size
     }
 
