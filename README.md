@@ -74,3 +74,7 @@ Legal documents ship in the repo and inside the app under Settings → Legal: [P
 ---
 
 **NekoShield — private, filtered DNS for your whole device.**
+
+---
+
+*This project is developed and maintained by [Nekosphere](https://github.com/Nekomo-App) — founded, developed, and led by [N3K0](https://github.com/MarshMeadow).*
